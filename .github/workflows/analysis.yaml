@@ -1,0 +1,81 @@
+name: analysis
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/analysis.yml'
+      - 'app/**'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.eslintrc.json'
+      - '.eslintignore'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tailwind.config.ts'
+      - 'postcss.config.js'
+      - 'tsconfig.json'
+      - 'next.config.js'
+
+jobs:
+  npm_install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: restore_cache
+        id: npm_cache
+        uses: actions/cache@v3
+        with:
+          key: npm-cache-v1-{{ hashFiles('package-lock.json') }}
+          path: "./node_modules"
+
+      - name: package install
+        if: steps.npm_cache.outputs.cache-hit != 'true'
+        run: |
+          npm install --ignore-scripts
+
+  prettier:
+    runs-on: ubuntu-latest
+    needs:
+      - npm_install
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: restore_cache
+        uses: actions/cache@v3
+        with:
+          key: npm-cache-v1-{{ hashFiles('package-lock.json') }}
+          path: "./node_modules"
+
+      - name: run prettier
+        run: npm run format:check
+
+  eslint:
+    runs-on: ubuntu-latest
+    needs:
+      - npm_install
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: restore_cache
+        uses: actions/cache@v3
+        with:
+          key: npm-cache-v1-{{ hashFiles('package-lock.json') }}
+          path: "./node_modules"
+
+      - name: run eslint
+        run: npm run lint
